@@ -229,6 +229,63 @@ public class MessageQueueImp implements MessageQueue, Serializable {
     }
 
 
+    public Message peek() {
+        List<Message> messages = this.peekInternal(1);
+
+        if (messages.size() > 0) {
+            return messages.get(0);
+        } else {
+            return null;
+        }
+    }
+
+
+    public List<Message> peek(int limit) {
+        return peekInternal(limit);
+    }
+
+
+    private List<Message> peekInternal(int limit) {
+        if (limit < 1) limit = 1;
+
+        List<Message> messages = new ArrayList<Message>(limit);
+
+        try {
+
+            // 'ORDER BY time' depends on that the host computer times is always right.
+            // 'ORDER BY id' what happens with the 'id' when we hit Long.MAX_VALUE?
+            PreparedStatement ps = conn.prepareStatement("SELECT LIMIT 0 " + limit
+                    + " id, object, body FROM message WHERE read=false ORDER BY id");
+
+            // The lock is making sure, that a SELECT and DELETE/UPDATE is only
+            // done by one thread at a time.
+            lock.lock();
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                InputStream is = rs.getBinaryStream(2);
+                String body = rs.getString(3);
+
+                MessageWrapper mw = new MessageWrapper();
+                mw.id = id;
+                mw.body = body;
+                if (is != null) mw.object = Utils.deserialize(is);
+
+                messages.add(mw);
+            }
+
+            ps.close();
+        } catch (SQLException e) {
+            logger.error(e);
+        } finally {
+            lock.unlock();
+        }
+
+        return messages;
+    }
+
     private List<Message> receiveInternal(int limit, boolean delete) {
         if (limit < 1) limit = 1;
 
