@@ -15,16 +15,16 @@
  */
 package com.npstrandberg.simplemq;
 
-import com.npstrandberg.simplemq.config.MessageQueueConfig;
-import com.npstrandberg.simplemq.config.PersistentMessageQueueConfig;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -34,10 +34,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.npstrandberg.simplemq.config.MessageQueueConfig;
+import com.npstrandberg.simplemq.config.PersistentMessageQueueConfig;
+
 
 public class MessageQueueImp implements MessageQueue, Serializable {
-
-    private transient static Log logger = LogFactory.getLog(MessageQueueImp.class);
+	
+	private static final long serialVersionUID = 4688999278205140460L;
+	private transient static Log logger = LogFactory.getLog(MessageQueueImp.class);
     private transient final Lock lock = new ReentrantLock();
     private transient final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
     private transient Connection conn;
@@ -640,7 +647,8 @@ public class MessageQueueImp implements MessageQueue, Serializable {
 
     // A Message returned by this queue, is an instance of MessageWrapper.
     private class MessageWrapper implements Message, Serializable {
-        private String body;
+		private static final long serialVersionUID = 7465209569623629016L;
+		private String body;
         private long id;
         private Serializable object;
 

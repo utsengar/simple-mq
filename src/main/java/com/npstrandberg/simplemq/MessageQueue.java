@@ -75,7 +75,7 @@ public interface MessageQueue {
      *
      * @return a Message or null - if there is no messages in the message queue
      */
-    Message peek(int no);
+    List<Message> peek(int no);
 
 
     /**
